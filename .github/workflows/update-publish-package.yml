@@ -1,0 +1,50 @@
+name: Update version and publish package
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup git
+        run: |
+          git config --global user.email "patricia@esolidar.com",
+          git config --global user.name "Patrícia Silva"
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Update package version
+        run: yarn version --minor
+
+      - name: Run build
+        run: yarn build
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v7
+        with:
+          author_name: Patrícia Silva
+          author_email: patricia@esolidar.com
+          message: "updated package version"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: Build container image
+        uses: actions/setup-node@v2
+        with:
+          node-version: "12.x"
+          registry-url: "https://npm.pkg.github.com"
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
